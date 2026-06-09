@@ -1,22 +1,37 @@
+import 'dart:io';
+
 import 'package:dartz/dartz.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lost_n_found/core/error/failures.dart';
+import 'package:lost_n_found/core/services/connectivity/network_info.dart';
 import 'package:lost_n_found/features/item/data/datasources/item_datasource.dart';
 import 'package:lost_n_found/features/item/data/datasources/local/item_local_datasource.dart';
+import 'package:lost_n_found/features/item/data/datasources/remote/item_remote_datasource.dart';
 import 'package:lost_n_found/features/item/data/models/item_hive_model.dart';
 import 'package:lost_n_found/features/item/domain/entities/item_entity.dart';
 import 'package:lost_n_found/features/item/domain/repositories/item_repository.dart';
 
 final itemRepositoryProvider = Provider<IItemRepository>((ref) {
   final itemDatasource = ref.read(itemLocalDatasourceProvider);
-  return ItemRepository(itemDatasource: itemDatasource);
+  final itemRemoteDataSource = ref.read(itemRemoteDatasourceProvider);
+  final networkInfo = ref.read(networkInfoProvider);
+  return ItemRepository(
+    itemDatasource: itemDatasource,
+    itemRemoteDataSource: itemRemoteDataSource,
+    networkInfo: networkInfo
+  );
 });
 
 class ItemRepository implements IItemRepository {
-  final IItemDataSource _itemDataSource;
+  final IItemLocalDataSource _itemDataSource;
+  final IItemRemoteDataSource _itemRemoteDataSource;
+  
+  final NetworkInfo _networkInfo;
 
-  ItemRepository({required IItemDataSource itemDatasource})
-      : _itemDataSource = itemDatasource;
+  ItemRepository({required IItemLocalDataSource itemDatasource, required IItemRemoteDataSource itemRemoteDataSource, required NetworkInfo networkInfo})
+    : _itemDataSource = itemDatasource,
+      _itemRemoteDataSource = itemRemoteDataSource,
+      _networkInfo = networkInfo;
 
   @override
   Future<Either<Failure, bool>> createItem(ItemEntity item) async {
@@ -26,9 +41,7 @@ class ItemRepository implements IItemRepository {
       if (result) {
         return const Right(true);
       }
-      return const Left(
-        LocalDatabaseFailure(message: "Failed to create item"),
-      );
+      return const Left(LocalDatabaseFailure(message: "Failed to create item"));
     } catch (e) {
       return Left(LocalDatabaseFailure(message: e.toString()));
     }
@@ -41,9 +54,7 @@ class ItemRepository implements IItemRepository {
       if (result) {
         return const Right(true);
       }
-      return const Left(
-        LocalDatabaseFailure(message: "Failed to delete item"),
-      );
+      return const Left(LocalDatabaseFailure(message: "Failed to delete item"));
     } catch (e) {
       return Left(LocalDatabaseFailure(message: e.toString()));
     }
@@ -75,7 +86,9 @@ class ItemRepository implements IItemRepository {
   }
 
   @override
-  Future<Either<Failure, List<ItemEntity>>> getItemsByUser(String userId) async {
+  Future<Either<Failure, List<ItemEntity>>> getItemsByUser(
+    String userId,
+  ) async {
     try {
       final models = await _itemDataSource.getItemsByUser(userId);
       final entities = ItemHiveModel.toEntityList(models);
@@ -108,7 +121,9 @@ class ItemRepository implements IItemRepository {
   }
 
   @override
-  Future<Either<Failure, List<ItemEntity>>> getItemsByCategory(String categoryId) async {
+  Future<Either<Failure, List<ItemEntity>>> getItemsByCategory(
+    String categoryId,
+  ) async {
     try {
       final models = await _itemDataSource.getItemsByCategory(categoryId);
       final entities = ItemHiveModel.toEntityList(models);
@@ -126,11 +141,38 @@ class ItemRepository implements IItemRepository {
       if (result) {
         return const Right(true);
       }
-      return const Left(
-        LocalDatabaseFailure(message: "Failed to update item"),
-      );
+      return const Left(LocalDatabaseFailure(message: "Failed to update item"));
     } catch (e) {
       return Left(LocalDatabaseFailure(message: e.toString()));
+    }
+  }
+
+  Future<Either<Failure, String>> uploadImage(File image) async {
+    // remote ma matrai insert huna paryo
+    if (await _networkInfo.isConnected) {
+      try {
+        final fileName = await _itemRemoteDataSource.uploadImage(image);
+        return Right(fileName);
+      } catch (e) {
+        return Left(ApiFailure(message: e.toString()));
+      }
+    } else {
+      return Left(ApiFailure(message: "No internet connection"));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> uploadVideo(File video) async {
+    // remote ma matrai insert huna paryo
+    if (await _networkInfo.isConnected) {
+      try {
+        final fileName = await _itemRemoteDataSource.uploadVideo(video);
+        return Right(fileName);
+      } catch (e) {
+        return Left(ApiFailure(message: e.toString()));
+      }
+    } else {
+      return Left(ApiFailure(message: "No internet connection"));
     }
   }
 }

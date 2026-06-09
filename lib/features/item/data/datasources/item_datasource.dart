@@ -1,6 +1,8 @@
+import 'dart:io';
+
 import 'package:lost_n_found/features/item/data/models/item_hive_model.dart';
 
-abstract interface class IItemDataSource {
+abstract interface class IItemLocalDataSource {
   Future<List<ItemHiveModel>> getAllItems();
   Future<List<ItemHiveModel>> getItemsByUser(String userId);
   Future<List<ItemHiveModel>> getLostItems();
@@ -10,4 +12,9 @@ abstract interface class IItemDataSource {
   Future<bool> createItem(ItemHiveModel item);
   Future<bool> updateItem(ItemHiveModel item);
   Future<bool> deleteItem(String itemId);
+}
+
+abstract interface class IItemRemoteDataSource {
+  Future<String> uploadImage(File image);
+  Future <String> uploadVideo(File video);
 }

@@ -1,12 +1,35 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+
 class ApiEndpoints {
   ApiEndpoints._();
 
-  // Base URL - change this for production
-  static const String baseUrl = 'http://10.0.2.2:3000/api/v1';
+  // // Base URL - change this for production
+  // static const String baseUrl = 'http://10.0.2.2:3000/api/v1';
+
   //static const String baseUrl = 'http://localhost:3000/api/v1';
   // For Android Emulator use: 'http://10.0.2.2:3000/api/v1'
   // For iOS Simulator use: 'http://localhost:3000/api/v1'
   // For Physical Device use your computer's IP: 'http://192.168.x.x:3000/api/v1'
+
+  static const bool isPhysicalDevice = false;
+  static const  String computerIpAddress="192.168.1.1";
+  static String get baseUrl {
+    if (isPhysicalDevice) {
+      return 'http://$computerIpAddress:3000/api/v1';
+    }
+    
+    if (kIsWeb) {
+      return 'http://localhost:3000/api/v1';
+    } else if (Platform.isAndroid) {
+      return 'http://10.0.2.2:3000/api/v1';
+    } else if (Platform.isIOS) {
+      return 'http://localhost:3000/api/v1';
+    } else {
+      return 'http://localhost:3000/api/v1';
+    }
+  }
 
   static const Duration connectionTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);
@@ -30,6 +53,8 @@ class ApiEndpoints {
   static const String items = '/items';
   static String itemById(String id) => '/items/$id';
   static String itemClaim(String id) => '/items/$id/claim';
+  static String itemUploadedPhoto='/items/upload-photo';
+  static String itemUploadedVideo='/items/upload-video';
 
   // =========== Comment Endpoints ===========
   static const String comments = '/comments';

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dartz/dartz.dart';
 import 'package:lost_n_found/core/error/failures.dart';
 import 'package:lost_n_found/features/item/domain/entities/item_entity.dart';
@@ -12,4 +14,9 @@ abstract interface class IItemRepository {
   Future<Either<Failure, bool>> createItem(ItemEntity item);
   Future<Either<Failure, bool>> updateItem(ItemEntity item);
   Future<Either<Failure, bool>> deleteItem(String itemId);
+
+  // image upload
+  Future<Either<Failure, String>> uploadImage(File image);
+  Future<Either<Failure, String>> uploadVideo(File video);
+
 }
